@@ -6,6 +6,7 @@ from ship import Ship
 from bullet import Bullet
 from alien import Alien
 from gamestats import GameStats
+from button import Button
 
 
 class AlienInvasion:
@@ -34,6 +35,9 @@ class AlienInvasion:
         self.aliens = pygame.sprite.Group()
 
         self._create_fleet()
+
+        # Make play button
+        self.play_button = Button(self, "Play")
 
     def run_game(self):
         """Start main game loop"""
@@ -96,6 +100,10 @@ class AlienInvasion:
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
 
+        # Draw play button if game is inactive
+        if not self.stats.game_active:
+            self.play_button.draw_button()
+
         # Make the most recently drawn screen visible
         pygame.display.flip()
 
@@ -108,6 +116,31 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
+
+    def _check_play_button(self, mouse_pos):
+        """Start new game when Play buton is pressed"""
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if button_clicked and not self.stats.game_active:
+            self._start_game()
+
+    def _start_game(self):
+        # Reset game stats
+        self.stats.reset_stats()
+        self.stats.game_active = True
+
+        # Clear field
+        self.aliens.empty()
+        self.bullets.empty()
+
+        # Populate field and reset ship
+        self._create_fleet()
+        self.ship.center_ship()
+
+        # Hide cursor
+        pygame.mouse.set_visible(False)
 
     def _check_keydown_events(self, event):
         # quit
@@ -120,6 +153,8 @@ class AlienInvasion:
             self.ship.moving_left = True
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
+        elif event.key == pygame.K_p and not self.stats.game_active:
+            self._start_game()
 
     def _check_keyup_events(self, event):
         # Stop moving
@@ -188,6 +223,7 @@ class AlienInvasion:
             sleep(0.5)
         else:
             self.stats.game_active = False
+            pygame.mouse.set_visible(True)
 
 
 if __name__ == '__main__':

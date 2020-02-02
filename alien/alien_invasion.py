@@ -62,7 +62,7 @@ class AlienInvasion:
 
         # Determine number of rows of aliens that fit on the screen
         ship_height = self.ship.rect.height
-        available_space_y = (self.settings.screen_height - (3 * alien_height) - ship_height)
+        available_space_y = (self.settings.screen_height - (4 * alien_height) - ship_height)
         number_rows = available_space_y // (2 * alien_height)
 
         # Create first row of aliens
@@ -165,9 +165,10 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Create a bullet and add it to the bullets group"""
-        if len(self.bullets) < self.settings.bullets_allowed:
-            new_bullet = Bullet(self)
-            self.bullets.add(new_bullet)
+        if self.stats.game_active:
+            if len(self.bullets) < self.settings.bullets_allowed:
+                new_bullet = Bullet(self)
+                self.bullets.add(new_bullet)
 
     def _update_bullets(self):
         self.bullets.update()
@@ -177,15 +178,6 @@ class AlienInvasion:
                 self.bullets.remove(bullet)
         self._check_bullet_alien_collisions()
 
-    def _check_bullet_alien_collisions(self):
-        # Check for collisions with aliens
-        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
-
-        # Repopulate fleet if empty
-        if not self.aliens:
-            self.bullets.empty()
-            self._create_fleet()
-
     def _check_aliens_bottom(self):
         """Check if aliens reach bottom of screen"""
         screen_rect = self.screen.get_rect()
@@ -194,6 +186,17 @@ class AlienInvasion:
                 # Lose a life
                 self._ship_hit()
                 break
+
+        self._check_bullet_alien_collisions()
+
+    def _check_bullet_alien_collisions(self):
+        # Check for collisions and remove if found
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
+
+        if not self.aliens:
+            # Reset bullets and create new fleet
+            self.bullets.empty()
+            self._create_fleet()
 
     def _update_aliens(self):
         """Update position of all aliens"""

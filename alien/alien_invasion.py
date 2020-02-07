@@ -7,6 +7,7 @@ from bullet import Bullet
 from alien import Alien
 from gamestats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 
 class AlienInvasion:
@@ -27,8 +28,9 @@ class AlienInvasion:
 
         pygame.display.set_caption("Alien Invasion")
 
-        # Create stats instance
+        # Create stats and score instances
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -100,6 +102,9 @@ class AlienInvasion:
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
 
+        # Draw score
+        self.sb.show_score()
+
         # Draw play button if game is inactive
         if not self.stats.game_active:
             self.play_button.draw_button()
@@ -124,6 +129,12 @@ class AlienInvasion:
         """Start new game when Play buton is pressed"""
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            # Reset dynamic settings
+            self.stats.reset_stats()
+            self.settings.initialise_dynamic_settings()
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
             self._start_game()
 
     def _start_game(self):
@@ -193,10 +204,21 @@ class AlienInvasion:
         # Check for collisions and remove if found
         collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, False, True)
 
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
+
         if not self.aliens:
             # Reset bullets and create new fleet
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
+
+            # Increase level
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _update_aliens(self):
         """Update position of all aliens"""
@@ -214,8 +236,9 @@ class AlienInvasion:
         """Respond to alien colloding with player ship"""
 
         if self.stats.ships_left > 0:
-            # Lose a life
+            # Lose a life and update UI
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
             # Clear field
             self.aliens.empty()
             self.bullets.empty()

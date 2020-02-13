@@ -11,8 +11,6 @@ from scoreboard import Scoreboard
 
 
 
-# TEST COMMENT
-
 
 class AlienInvasion:
     """Overall class to manage game assets and behaviour"""
